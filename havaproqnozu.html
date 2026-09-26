@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="az">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Hava Proqnozu</title>
+
+    <style>
+
+       * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    background: #B4E1EB;
+    color: #24465F;
+    padding: 30px 15px;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 34px;
+    color: #24465F;
+}
+
+/* Axtarış hissəsi */
+
+.search {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.search input {
+    flex: 1;
+    padding: 14px;
+
+    border: 1px solid #95BDD7;
+    border-radius: 8px;
+
+    font-size: 16px;
+    outline: none;
+
+    background: #F9E8A2;
+    color: #24465F;
+}
+
+.search input::placeholder {
+    color: #5f7f91;
+}
+
+.search button {
+    padding: 14px 25px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #78A4CB;
+    color: white;
+
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.search button:hover {
+    background: #6B96B9;
+}
+
+/* Hava məlumatları */
+
+.weather {
+    display: none;
+}
+
+.current-weather {
+    background: #F9E8A2;
+
+    border-radius: 12px;
+
+    padding: 25px;
+    margin-bottom: 25px;
+
+    border: 1px solid #95BDD7;
+}
+
+.location {
+    font-size: 27px;
+    font-weight: bold;
+    margin-bottom: 20px;
+
+    color: #24465F;
+}
+
+.current-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.info-box {
+    background: #95BDD7;
+
+    padding: 17px;
+
+    border-radius: 8px;
+
+    border: 1px solid #78A4CB;
+}
+
+.info-box .label {
+    font-size: 14px;
+
+    color: #365D75;
+
+    margin-bottom: 7px;
+}
+
+.info-box .value {
+    font-size: 20px;
+    font-weight: bold;
+
+    color: #24465F;
+}
+
+/* 7 günlük proqnoz */
+
+.forecast-title {
+    font-size: 24px;
+    margin-bottom: 15px;
+
+    color: #24465F;
+}
+
+.forecast {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.day {
+    background: #78A4CB;
+
+    padding: 17px;
+
+    border-radius: 10px;
+
+    text-align: center;
+
+    color: white;
+
+    border: 1px solid #6B96B9;
+}
+
+.day-date {
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.day-weather {
+    font-size: 15px;
+    min-height: 40px;
+    margin-bottom: 12px;
+}
+
+.temperature {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.rain,
+.wind {
+    font-size: 14px;
+    margin-top: 6px;
+}
+
+/* Xəta */
+
+.error {
+    display: none;
+
+    background: #F9E8A2;
+    color: #24465F;
+
+    padding: 14px;
+
+    border-radius: 8px;
+
+    margin-bottom: 20px;
+
+    text-align: center;
+
+    border: 1px solid #95BDD7;
+}
+
+/* Yüklənmə */
+
+.loading {
+    display: none;
+
+    text-align: center;
+
+    font-size: 17px;
+
+    margin: 20px;
+
+    color: #24465F;
+}
+
+@media (max-width: 700px) {
+
+    .forecast {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    h1 {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 450px) {
+
+    .search {
+        flex-direction: column;
+    }
+
+    .current-info {
+        grid-template-columns: 1fr;
+    }
+
+    .forecast {
+        grid-template-columns: 1fr;
+    }
+}
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+    <h1>🌤️ Hava Proqnozu</h1>
+
+
+    <div class="search">
+
+        <input
+            type="text"
+            id="cityInput"
+            placeholder="Şəhər adını yazın..."
+        >
+
+        <button onclick="getWeather()">
+            Axtar
+        </button>
+
+    </div>
+
+
+    <div class="error" id="error"></div>
+
+
+    <div class="loading" id="loading">
+        ⏳ Hava məlumatları yüklənir...
+    </div>
+
+
+    <div class="weather" id="weather">
+
+
+        <div class="current-weather">
+
+
+            <div class="location" id="location">
+                Bakı, Azərbaycan
+            </div>
+
+
+            <div class="current-info">
+
+
+                <div class="info-box">
+
+                    <div class="label">
+                        🌡️ Temperatur
+                    </div>
+
+                    <div class="value" id="temperature">
+                        -
+                    </div>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <div class="label">
+                        🤒 Hiss olunan
+                    </div>
+
+                    <div class="value" id="feelsLike">
+                        -
+                    </div>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <div class="label">
+                        💧 Rütubət
+                    </div>
+
+                    <div class="value" id="humidity">
+                        -
+                    </div>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <div class="label">
+                        💨 Külək
+                    </div>
+
+                    <div class="value" id="wind">
+                        -
+                    </div>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <div class="label">
+                        🌧️ Yağıntı
+                    </div>
+
+                    <div class="value" id="precipitation">
+                        -
+                    </div>
+
+                </div>
+
+
+                <div class="info-box">
+
+                    <div class="label">
+                        ☁️ Hava
+                    </div>
+
+                    <div class="value" id="description">
+                        -
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+        <h2 class="forecast-title">
+            📅 7 Günlük Proqnoz
+        </h2>
+
+
+        <div class="forecast" id="forecast"></div>
+
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+
+    // ==========================================
+    // HAVA KODLARINI MƏTNƏ ÇEVİRİR
+    // ==========================================
+
+    function weatherDescription(code) {
+
+        const descriptions = {
+
+            0: "Açıq hava",
+            1: "Əsasən açıq",
+            2: "Qismən buludlu",
+            3: "Buludlu",
+
+            45: "Dumanlı",
+            48: "Çöküntülü duman",
+
+            51: "Zəif çiskin",
+            53: "Orta çiskin",
+            55: "Güclü çiskin",
+
+            56: "Zəif donmuş çiskin",
+            57: "Güclü donmuş çiskin",
+
+            61: "Zəif yağış",
+            63: "Orta yağış",
+            65: "Güclü yağış",
+
+            66: "Zəif donmuş yağış",
+            67: "Güclü donmuş yağış",
+
+            71: "Zəif qar",
+            73: "Orta qar",
+            75: "Güclü qar",
+
+            77: "Qar dənələri",
+
+            80: "Zəif yağış leysanı",
+            81: "Orta yağış leysanı",
+            82: "Güclü yağış leysanı",
+
+            85: "Zəif qar leysanı",
+            86: "Güclü qar leysanı",
+
+            95: "Tufan",
+            96: "Dolu ilə tufan",
+            99: "Güclü dolu ilə tufan"
+        };
+
+        return descriptions[code] || "Naməlum hava";
+    }
+
+
+
+    // ==========================================
+    // HAVA PROQNOZUNU ALIR
+    // ==========================================
+
+    async function getWeather() {
+
+        const cityInput =
+            document.getElementById("cityInput");
+
+        const city =
+            cityInput.value.trim();
+
+
+        const error =
+            document.getElementById("error");
+
+        const loading =
+            document.getElementById("loading");
+
+        const weather =
+            document.getElementById("weather");
+
+
+        error.style.display = "none";
+
+
+        if (city === "") {
+
+            showError(
+                "Zəhmət olmasa şəhər adı daxil edin."
+            );
+
+            return;
+        }
+
+
+        loading.style.display = "block";
+
+        weather.style.display = "none";
+
+
+        try {
+
+
+            // ==========================================
+            // 1. ŞƏHƏRİN KOORDİNATLARINI TAPIRIQ
+            // ==========================================
+
+            const geoUrl =
+                "https://geocoding-api.open-meteo.com/v1/search";
+
+
+            const geoParams =
+                new URLSearchParams({
+
+                    name: city,
+
+                    count: 1,
+
+                    language: "az",
+
+                    format: "json"
+
+                });
+
+
+            const geoResponse =
+                await fetch(
+                    `${geoUrl}?${geoParams}`
+                );
+
+
+            if (!geoResponse.ok) {
+
+                throw new Error(
+                    "Şəhər axtarışı uğursuz oldu."
+                );
+            }
+
+
+            const geoData =
+                await geoResponse.json();
+
+
+            if (
+                !geoData.results ||
+                geoData.results.length === 0
+            ) {
+
+                showError("Şəhər tapılmadı.");
+
+                return;
+            }
+
+
+            const location =
+                geoData.results[0];
+
+
+            const latitude =
+                location.latitude;
+
+            const longitude =
+                location.longitude;
+
+            const cityName =
+                location.name;
+
+            const country =
+                location.country || "";
+
+
+
+            // ==========================================
+            // 2. HAVA MƏLUMATLARINI ALIRIQ
+            // ==========================================
+
+            const weatherUrl =
+                "https://api.open-meteo.com/v1/forecast";
+
+
+            const weatherParams =
+                new URLSearchParams({
+
+                    latitude: latitude,
+
+                    longitude: longitude,
+
+                    current:
+                        "temperature_2m," +
+                        "relative_humidity_2m," +
+                        "apparent_temperature," +
+                        "precipitation," +
+                        "weather_code," +
+                        "wind_speed_10m",
+
+                    daily:
+                        "weather_code," +
+                        "temperature_2m_max," +
+                        "temperature_2m_min," +
+                        "precipitation_probability_max," +
+                        "wind_speed_10m_max",
+
+                    timezone: "auto",
+
+                    forecast_days: 7
+
+                });
+
+
+            const weatherResponse =
+                await fetch(
+                    `${weatherUrl}?${weatherParams}`
+                );
+
+
+            if (!weatherResponse.ok) {
+
+                throw new Error(
+                    "Hava məlumatları alınmadı."
+                );
+            }
+
+
+            const data =
+                await weatherResponse.json();
+
+
+
+            // ==========================================
+            // 3. CARİ HAVA MƏLUMATLARI
+            // ==========================================
+
+            const current =
+                data.current;
+
+
+            document.getElementById(
+                "location"
+            ).textContent =
+                `${cityName}, ${country}`;
+
+
+            document.getElementById(
+                "temperature"
+            ).textContent =
+                `${current.temperature_2m} °C`;
+
+
+            document.getElementById(
+                "feelsLike"
+            ).textContent =
+                `${current.apparent_temperature} °C`;
+
+
+            document.getElementById(
+                "humidity"
+            ).textContent =
+                `${current.relative_humidity_2m} %`;
+
+
+            document.getElementById(
+                "wind"
+            ).textContent =
+                `${current.wind_speed_10m} km/saat`;
+
+
+            document.getElementById(
+                "precipitation"
+            ).textContent =
+                `${current.precipitation} mm`;
+
+
+            document.getElementById(
+                "description"
+            ).textContent =
+                weatherDescription(
+                    current.weather_code
+                );
+
+
+
+            // ==========================================
+            // 4. 7 GÜNLÜK PROQNOZ
+            // ==========================================
+
+            const daily =
+                data.daily;
+
+
+            const forecastContainer =
+                document.getElementById(
+                    "forecast"
+                );
+
+
+            forecastContainer.innerHTML = "";
+
+
+            for (
+                let i = 0;
+                i < daily.time.length;
+                i++
+            ) {
+
+
+                const date =
+                    daily.time[i];
+
+
+                const minTemp =
+                    daily.temperature_2m_min[i];
+
+
+                const maxTemp =
+                    daily.temperature_2m_max[i];
+
+
+                const rain =
+                    daily.precipitation_probability_max[i];
+
+
+                const maxWind =
+                    daily.wind_speed_10m_max[i];
+
+
+                const code =
+                    daily.weather_code[i];
+
+
+                const description =
+                    weatherDescription(code);
+
+
+
+                // Tarixi formatla
+
+                const formattedDate =
+                    new Date(date)
+                    .toLocaleDateString(
+                        "az-AZ",
+                        {
+                            day: "2-digit",
+                            month: "2-digit"
+                        }
+                    );
+
+
+
+                // Gün üçün HTML
+
+                const dayElement =
+                    document.createElement("div");
+
+
+                dayElement.className =
+                    "day";
+
+
+                dayElement.innerHTML = `
+
+                    <div class="day-date">
+                        📅 ${formattedDate}
+                    </div>
+
+                    <div class="day-weather">
+                        ${description}
+                    </div>
+
+                    <div class="temperature">
+                        🌡️ ${minTemp}°C - ${maxTemp}°C
+                    </div>
+
+                    <div class="rain">
+                        🌧️ Yağış: ${rain}%
+                    </div>
+
+                    <div class="wind">
+                        💨 Külək: ${maxWind} km/s
+                    </div>
+
+                `;
+
+
+                forecastContainer.appendChild(
+                    dayElement
+                );
+            }
+
+
+            // Havanı göstər
+
+            weather.style.display =
+                "block";
+
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+
+            showError(
+                "Xəta baş verdi. İnternet bağlantınızı yoxlayın."
+            );
+
+        }
+
+        finally {
+
+            loading.style.display =
+                "none";
+        }
+
+    }
+
+
+
+    // ==========================================
+    // XƏTA GÖSTƏR
+    // ==========================================
+
+    function showError(message) {
+
+        const error =
+            document.getElementById("error");
+
+
+        const loading =
+            document.getElementById("loading");
+
+
+        error.textContent =
+            message;
+
+
+        error.style.display =
+            "block";
+
+
+        loading.style.display =
+            "none";
+    }
+
+
+
+    // ==========================================
+    // ENTER İLƏ AXTARIŞ
+    // ==========================================
+
+    document
+        .getElementById("cityInput")
+        .addEventListener(
+            "keydown",
+            function(event) {
+
+                if (event.key === "Enter") {
+
+                    getWeather();
+
+                }
+
+            }
+        );
+
+</script>
+
+
+</body>
+
+</html>
